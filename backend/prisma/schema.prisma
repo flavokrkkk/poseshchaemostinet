@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ELDER
+  STUDENT
+  ADMIN
+}
+
+enum LessonType {
+  PRACTICE
+  LECTURE
+  LABORATORY
+}
+
+enum CustomerGender {
+  MALE
+  FEMALE
+}
+
+enum HomeworkStatus {
+  ISSUED
+  SUBMITTED
+  GRADED
+}
+
+enum AttendanceType {
+  PRESENT
+  ABSENT
+  EXCUSED
+  EMPTIES
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model User {
+  id String @id @default(cuid())
+
+  email         String         @unique
+  password      String
+  avatarUrl     String?        @map("avatar_url")
+  role          Role           @default(STUDENT)
+  fullName      String?        @map("full_name")
+  gender        CustomerGender
+  groupId       String?        @map("group_id")
+  group         Group?         @relation("UserToGroup", fields: [groupId], references: [id])
+  invites       Invite[]       @relation("UserInvites")
+  elderOfGroups Group[]        @relation("GroupElder")
+  attendance    Attendance[]
+  achievements  Achievement[]  @relation("UserAchievements")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user")
+}
+
+model Group {
+  id              String           @id @default(cuid())
+  name            String
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  users           User[]           @relation("UserToGroup")
+  schedules       Schedule[]
+  templateLessons TemplateLesson[]
+  universityId    String           @map("university_id")
+  university      University       @relation(fields: [universityId], references: [id])
+  invites         Invite[]
+  elderId         String?          @map("elder_id")
+  elder           User?            @relation("GroupElder", fields: [elderId], references: [id])
+
+  @@map("group")
+}
+
+model Event {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  date         DateTime
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  universityId String     @map("university_id")
+  university   University @relation(fields: [universityId], references: [id])
+
+  @@map("event")
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  groupId   String   @map("group_id")
+  group     Group    @relation(fields: [groupId], references: [id])
+  date      DateTime @map("date")
+  timeStart String   @map("time_start")
+  timeEnd   String   @map("time_end")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  lessons   Lesson[]
+
+  @@map("schedule")
+}
+
+model Lesson {
+  id                  String          @id @default(cuid())
+  name                String
+  startDate           DateTime        @map("start_date")
+  endDate             DateTime        @map("end_date")
+  typeLesson          LessonType      @map("type_lesson")
+  room                String?         @map("room")
+  teacherName         String?         @map("teacher_name")
+  scheduleId          String          @map("schedule_id")
+  schedule            Schedule        @relation(fields: [scheduleId], references: [id])
+  attendance          Attendance[]
+  templateLessonId    String?         @map("template_lesson_id")
+  templateLesson      TemplateLesson? @relation(fields: [templateLessonId], references: [id])
+  homeworkDescription String?         @map("homework_description")
+  homeworkDueDate     DateTime?       @map("homework_due_date")
+  homeworkFiles       Json            @default("[]") @db.JsonB
+  homeworkStatus      HomeworkStatus? @map("homework_status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("lesson")
+}
+
+model TemplateLesson {
+  id          String      @id @default(cuid())
+  name        String
+  typeLesson  LessonType?
+  room        String?
+  teacherName String?
+  startDate   String?
+  endDate     String?
+  groupId     String      @map("group_id")
+  group       Group       @relation(fields: [groupId], references: [id])
+  daysOfWeek  Json        @default("[]") @db.JsonB
+  periodStart DateTime?
+  periodEnd   DateTime?
+  lessons     Lesson[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([groupId])
+  @@map("template_lesson")
+}
+
+model Attendance {
+  id       String         @id @default(cuid())
+  lessonId String         @map("lesson_id")
+  lesson   Lesson         @relation(fields: [lessonId], references: [id])
+  userId   String         @map("user_id")
+  user     User           @relation(fields: [userId], references: [id])
+  status   AttendanceType @default(EMPTIES)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("attendance")
+}
+
+model News {
+  id           String     @id @default(cuid())
+  date         DateTime
+  title        String
+  content      String
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  universityId String     @map("university_id")
+  university   University @relation(fields: [universityId], references: [id])
+
+  @@map("news")
+}
+
+model University {
+  id        String   @id @default(cuid())
+  name      String
+  image     String?
+  inn       String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  groups    Group[]
+  news      News[]
+  events    Event[]
+
+  @@map("university")
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  groupId   String   @map("group_id")
+  group     Group    @relation(fields: [groupId], references: [id])
+  userId    String?  @map("user_id")
+  user      User?    @relation("UserInvites", fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invite")
+}
+
+model Achievement {
+  id          String              @id @default(cuid())
+  userId      String              @map("user_id")
+  user        User                @relation("UserAchievements", fields: [userId], references: [id])
+  templateId  String              @map("template_id")
+  template    AchievementTemplate @relation(fields: [templateId], references: [id])
+  progress    Int                 @default(0)
+  isCompleted Boolean             @default(false) @map("is_completed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("achievement")
+}
+
+model AchievementTemplate {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String  @map("image_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  achievements Achievement[]
+
+  @@map("achievement_template")
+}
