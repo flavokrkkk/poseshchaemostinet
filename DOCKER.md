@@ -32,12 +32,16 @@ docker compose up --build
 
 ## Миграции базы данных
 
-Контейнер поднимает PostgreSQL и backend, но миграции Prisma нужно выполнять отдельно перед полноценной работой приложения:
+Backend-контейнер автоматически выполняет Prisma-миграции перед запуском приложения:
 
 ```bash
-cd backend
-npm ci
-DATABASE_URL="postgresql://posnet:posnet_password@localhost:5432/posnet?schema=public" npx prisma migrate deploy
+docker compose up --build
 ```
 
-Для просмотра Swagger миграции не обязательны, потому что документация формируется из NestJS controllers и DTO.
+Статус миграций можно проверить вручную:
+
+```bash
+docker compose exec backend npx prisma migrate status
+```
+
+Для просмотра Swagger миграции не обязательны, потому что документация формируется из NestJS controllers и DTO. Для работы API-ручек таблицы должны быть созданы миграциями.
