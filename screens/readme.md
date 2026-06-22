@@ -1,0 +1,1 @@
+Макеты - https://www.figma.com/design/GKeR8gU0tSOzXQcGJnRg4L/%D1%81%D1%82%D0%B0%D1%80%D0%BE%D1%81%D1%82%D0%B0.%D1%80%D1%84?node-id=9-17380&p=f&t=PSXzk7tKcHEQY3do-0

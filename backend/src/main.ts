@@ -15,13 +15,14 @@ async function bootstrap() {
   });
 
   const configSwagger = new DocumentBuilder()
-    .setTitle("My API")
-    .setDescription("API description")
+    .setTitle("посещаемости.net API")
+    .setDescription("REST API образовательной платформы посещаемости.net")
     .setVersion("1.0")
     .build();
   const document = SwaggerModule.createDocument(app, configSwagger);
   SwaggerModule.setup("docs", app, document);
 
-  await app.listen(config.getOrThrow<number>("APPLICATION_PORT"));
+  const port = Number(config.getOrThrow<string>("APPLICATION_PORT"));
+  await app.listen(port, "0.0.0.0");
 }
 bootstrap();
